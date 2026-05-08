@@ -20,37 +20,64 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
-        // Create participants list HTML
-        let participantsHTML = "";
+        const title = document.createElement("h4");
+        title.textContent = name;
+        activityCard.appendChild(title);
+
+        const description = document.createElement("p");
+        description.textContent = details.description;
+        activityCard.appendChild(description);
+
+        const schedule = document.createElement("p");
+        const scheduleLabel = document.createElement("strong");
+        scheduleLabel.textContent = "Schedule:";
+        schedule.appendChild(scheduleLabel);
+        schedule.appendChild(document.createTextNode(` ${details.schedule}`));
+        activityCard.appendChild(schedule);
+
+        const availability = document.createElement("p");
+        const availabilityLabel = document.createElement("strong");
+        availabilityLabel.textContent = "Availability:";
+        availability.appendChild(availabilityLabel);
+        availability.appendChild(document.createTextNode(` ${spotsLeft} spots left`));
+        activityCard.appendChild(availability);
+
+        const participantsSection = document.createElement("div");
+        participantsSection.className = "participants-section";
+
         if (details.participants && details.participants.length > 0) {
-          participantsHTML = `
-            <div class="participants-section">
-              <strong>Participants:</strong>
-              <ul class="participants-list">
-                ${details.participants.map(p => `
-                  <li class="participant-item">${p}
-                    <span class="delete-participant" title="Remove participant" data-activity="${encodeURIComponent(name)}" data-email="${encodeURIComponent(p)}">&times;</span>
-                  </li>
-                `).join("")}
-              </ul>
-            </div>
-          `;
+          const participantsLabel = document.createElement("strong");
+          participantsLabel.textContent = "Participants:";
+          participantsSection.appendChild(participantsLabel);
+
+          const participantsList = document.createElement("ul");
+          participantsList.className = "participants-list";
+
+          details.participants.forEach((p) => {
+            const participantItem = document.createElement("li");
+            participantItem.className = "participant-item";
+            participantItem.appendChild(document.createTextNode(p));
+
+            const deleteIcon = document.createElement("span");
+            deleteIcon.className = "delete-participant";
+            deleteIcon.title = "Remove participant";
+            deleteIcon.setAttribute("data-activity", encodeURIComponent(name));
+            deleteIcon.setAttribute("data-email", encodeURIComponent(p));
+            deleteIcon.textContent = "×";
+
+            participantItem.appendChild(deleteIcon);
+            participantsList.appendChild(participantItem);
+          });
+
+          participantsSection.appendChild(participantsList);
         } else {
-          participantsHTML = `
-            <div class="participants-section empty">
-              <em>No participants yet.</em>
-            </div>
-          `;
+          participantsSection.classList.add("empty");
+          const emptyMessage = document.createElement("em");
+          emptyMessage.textContent = "No participants yet.";
+          participantsSection.appendChild(emptyMessage);
         }
 
-        activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
-          ${participantsHTML}
-        `;
-
+        activityCard.appendChild(participantsSection);
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
