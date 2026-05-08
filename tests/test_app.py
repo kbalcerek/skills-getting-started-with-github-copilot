@@ -1,11 +1,21 @@
 
+import copy
 import pytest
 from fastapi import status
-from httpx import ASGITransport
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
+import src.app
 from src.app import app
 
-@pytest.mark.asyncio
+
+@pytest.fixture(autouse=True)
+def restore_activities():
+    """Snapshot and restore the global activities state around each test."""
+    original = copy.deepcopy(src.app.activities)
+    yield
+    src.app.activities.clear()
+    src.app.activities.update(original)
+
+
 async def test_get_activities():
     # Arrange
     transport = ASGITransport(app=app)
@@ -18,7 +28,6 @@ async def test_get_activities():
     assert isinstance(data, dict)
     assert "Chess Club" in data
 
-@pytest.mark.asyncio
 async def test_signup_for_activity_success():
     # Arrange
     test_email = "testuser@mergington.edu"
@@ -31,7 +40,6 @@ async def test_signup_for_activity_success():
     assert response.status_code == status.HTTP_200_OK
     assert f"Signed up {test_email} for {activity}" in response.json().get("message", "")
 
-@pytest.mark.asyncio
 async def test_signup_for_activity_already_signed_up():
     # Arrange
     existing_email = "michael@mergington.edu"
@@ -44,7 +52,6 @@ async def test_signup_for_activity_already_signed_up():
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "Student already signed up"
 
-@pytest.mark.asyncio
 async def test_signup_for_activity_not_found():
     # Arrange
     test_email = "testuser@mergington.edu"
@@ -57,7 +64,6 @@ async def test_signup_for_activity_not_found():
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Activity not found"
 
-@pytest.mark.asyncio
 async def test_unregister_from_activity_success():
     # Arrange
     test_email = "michael@mergington.edu"
@@ -70,7 +76,6 @@ async def test_unregister_from_activity_success():
     assert response.status_code == status.HTTP_200_OK
     assert f"Removed {test_email} from {activity}" in response.json().get("message", "")
 
-@pytest.mark.asyncio
 async def test_unregister_from_activity_not_signed_up():
     # Arrange
     test_email = "not_signed_up@mergington.edu"
@@ -83,7 +88,6 @@ async def test_unregister_from_activity_not_signed_up():
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "Student not signed up"
 
-@pytest.mark.asyncio
 async def test_unregister_from_activity_not_found():
     # Arrange
     test_email = "testuser@mergington.edu"
